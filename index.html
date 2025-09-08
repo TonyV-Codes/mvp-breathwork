@@ -4,45 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Breathwork Logger</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      max-width: 600px;
-      margin: 0 auto;
-      padding: 20px;
-    }
-    h1 {
-      text-align: center;
-    }
-    button {
-      padding: 10px 20px;
-      margin: 5px 0;
-      font-size: 16px;
-    }
-    .timer {
-      font-size: 32px;
-      text-align: center;
-      margin: 20px 0;
-    }
-    .hidden {
-      display: none;
-    }
-    .log-table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 20px;
-    }
-    .log-table th, .log-table td {
-      border: 1px solid #ccc;
-      padding: 5px;
-      text-align: center;
-    }
-    textarea {
-      width: 100%;
-      height: 60px;
-      margin: 5px 0;
-    }
-  </style>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
@@ -53,21 +15,24 @@
 </div>
 
 <div id="timer-section" class="hidden">
-  <label for="preset">Choose duration:</label>
+  <label for="preset">Choose duration or stopwatch:</label>
   <select id="preset">
     <option value="120">2 min</option>
     <option value="300">5 min</option>
     <option value="600">10 min</option>
+    <option value="stopwatch">Stopwatch</option>
   </select>
-  <button id="startTimer">Start Timer</button>
-  <button id="stopTimer">Stop</button>
   <div class="timer" id="timerDisplay">00:00</div>
+  <button id="startTimer">Start</button>
+  <button id="pauseTimer">Pause</button>
+  <button id="stopTimer">Stop</button>
 </div>
 
 <div id="survey-section" class="hidden">
   <h3>Session Feedback</h3>
   <label>Rate your concentration on breathing/counting (1-10):</label>
   <select id="concentration">
+    <option value=""></option>
     <option value="1">1</option><option value="2">2</option><option value="3">3</option>
     <option value="4">4</option><option value="5">5</option><option value="6">6</option>
     <option value="7">7</option><option value="8">8</option><option value="9">9</option>
@@ -76,10 +41,11 @@
 
   <label>Rate your diaphragm breathing success (1-10):</label>
   <select id="diaphragm">
+    <option value=""></option>
     <option value="1">1</option><option value="2">2</option><option value="3">3</option>
     <option value="4">4</option><option value="5">5</option><option value="6">6</option>
-    <option value="7">7</option><option value="8">8</option><option value="9">9</option>
-    <option value="10">10</option>
+    <option value="7">7</option><option value="8">8</option>
+    <option value="9">9</option><option value="10">10</option>
   </select>
 
   <label>Notes / Thoughts / Insights:</label>
@@ -98,100 +64,12 @@
       <th>Diaphragm</th>
       <th>Notes</th>
       <th>Duration (s)</th>
+      <th>Action</th>
     </tr>
   </thead>
   <tbody></tbody>
 </table>
 
-<script>
-  // Global variables
-  let sessionCount = 0;
-  let timerInterval;
-  let timerSeconds = 0;
-  let sessionStartTime;
-
-  // Elements
-  const startSection = document.getElementById('start-section');
-  const timerSection = document.getElementById('timer-section');
-  const surveySection = document.getElementById('survey-section');
-  const timerDisplay = document.getElementById('timerDisplay');
-  const logTableBody = document.querySelector('#logTable tbody');
-
-  // Start session button
-  document.getElementById('startSession').addEventListener('click', () => {
-    const today = new Date().toISOString().split('T')[0];
-    let logs = JSON.parse(localStorage.getItem('breathLogs') || '[]');
-    sessionCount = logs.filter(l => l.date === today).length + 1;
-
-    startSection.classList.add('hidden');
-    timerSection.classList.remove('hidden');
-    sessionStartTime = Date.now();
-  });
-
-  // Timer functions
-  function updateTimer() {
-    timerDisplay.textContent = `${Math.floor(timerSeconds/60).toString().padStart(2,'0')}:${(timerSeconds%60).toString().padStart(2,'0')}`;
-    if (timerSeconds <= 0) {
-      clearInterval(timerInterval);
-      endSession();
-    } else {
-      timerSeconds--;
-    }
-  }
-
-  document.getElementById('startTimer').addEventListener('click', () => {
-    const preset = parseInt(document.getElementById('preset').value);
-    timerSeconds = preset;
-    clearInterval(timerInterval);
-    timerInterval = setInterval(updateTimer, 1000);
-  });
-
-  document.getElementById('stopTimer').addEventListener('click', () => {
-    clearInterval(timerInterval);
-    timerSeconds = Math.floor((Date.now() - sessionStartTime)/1000);
-    endSession();
-  });
-
-  // End session → show survey
-  function endSession() {
-    timerSection.classList.add('hidden');
-    surveySection.classList.remove('hidden');
-  }
-
-  // Submit survey
-  document.getElementById('submitSurvey').addEventListener('click', () => {
-    const today = new Date().toISOString().split('T')[0];
-    const concentration = document.getElementById('concentration').value;
-    const diaphragm = document.getElementById('diaphragm').value;
-    const notes = document.getElementById('notes').value;
-    const duration = timerSeconds;
-
-    let logs = JSON.parse(localStorage.getItem('breathLogs') || '[]');
-    logs.push({date: today, session: sessionCount, concentration, diaphragm, notes, duration});
-    localStorage.setItem('breathLogs', JSON.stringify(logs));
-
-    addLogRow({date: today, session: sessionCount, concentration, diaphragm, notes, duration});
-
-    // Reset for next session
-    surveySection.classList.add('hidden');
-    startSection.classList.remove('hidden');
-    document.getElementById('notes').value = '';
-  });
-
-  // Render saved logs
-  function addLogRow(log) {
-    const tr = document.createElement('tr');
-    tr.innerHTML = `<td>${log.date}</td><td>${log.session}</td><td>${log.concentration}</td><td>${log.diaphragm}</td><td>${log.notes}</td><td>${log.duration}</td>`;
-    logTableBody.appendChild(tr);
-  }
-
-  function loadLogs() {
-    let logs = JSON.parse(localStorage.getItem('breathLogs') || '[]');
-    logs.forEach(addLogRow);
-  }
-
-  loadLogs();
-</script>
-
+<script src="app.js"></script>
 </body>
 </html>
