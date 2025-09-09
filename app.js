@@ -7,10 +7,47 @@ let isPaused = false;
 let sessionStartTime;
 
 // global functions 
-function vibrate(pattern = 200) {
+function vibrate(pattern = 200, type = "start") {
   if (navigator.vibrate) {
     navigator.vibrate(pattern);
+  } else {
+    // iOS Safari fallback: different beeps for start/end
+    if (type === "start") {
+      playBeep(880, 200); // high pitch, short
+    } else if (type === "end") {
+      playBeep(440, 600); // low pitch, longer
+    }
+    flashScreen();
   }
+}
+
+function playBeep(frequency = 440, duration = 300) {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const oscillator = ctx.createOscillator();
+    const gainNode = ctx.createGain();
+
+    oscillator.type = "sine"; 
+    oscillator.frequency.value = frequency;
+    oscillator.connect(gainNode);
+    gainNode.connect(ctx.destination);
+
+    oscillator.start();
+    setTimeout(() => {
+      oscillator.stop();
+      ctx.close();
+    }, duration);
+  } catch (err) {
+    console.log("Beep not supported:", err);
+  }
+}
+
+function flashScreen() {
+  const originalColor = document.body.style.backgroundColor;
+  document.body.style.backgroundColor = "yellow";
+  setTimeout(() => {
+    document.body.style.backgroundColor = originalColor;
+  }, 300);
 }
 
 // Elements
