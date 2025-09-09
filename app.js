@@ -98,18 +98,25 @@ let presetMode = 'countdown';
 
 document.getElementById('startTimer').addEventListener('click', () => {
   const preset = document.getElementById('preset').value;
-  if (preset === 'stopwatch') {
+  const custom = parseInt(document.getElementById('customDuration').value);
+
+  if (!isNaN(custom) && custom > 0) {
+    // Use custom duration if valid
+    presetMode = 'countdown';
+    timerSeconds = custom;
+  } else if (preset === 'stopwatch') {
     presetMode = 'stopwatch';
     timerSeconds = 0;
   } else {
     presetMode = 'countdown';
     timerSeconds = parseInt(preset);
   }
+
   clearInterval(timerInterval);
   timerInterval = setInterval(updateTimer, 1000);
-  vibrate(200); // short vibration to signal timer start
-
+  vibrate(200, "start"); // short vibration/beep
 });
+
 
 document.getElementById('pauseTimer').addEventListener('click', () => {
   isPaused = !isPaused;
